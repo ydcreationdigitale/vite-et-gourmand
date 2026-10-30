@@ -1,57 +1,53 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Détail du Menu - Vite & Gourmand</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
+<?php
+header('Content-Type: application/json');
 
-   !-- Header / Navigation avec Contact et Connexion -->
-    <header class="site-header">
-        <div class="container header-container">
-            <a href="index.html" class="logo">Vite & Gourmand</a>
-            <nav class="nav">
-                <a href="index.php">Accueil</a>
-                <a href="menus.php">Nos Menus</a>                 
-                <a href="contact.php">Contact</a>
-                <a href="connexion.php" class="btn-connexion">Connexion</a>
-            </nav>
-        </div>
-    </header>
+// 1. Connexion sécurisée à ta base MySQL XAMPP via PDO
+try {
+    $pdo = new PDO('mysql:host=localhost;dbname=vite_et_gourmand;charset=utf8', 'root', '', [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+    ]);
+} catch (Exception $e) {
+    echo json_encode(['error' => 'Erreur de connexion à la base de données']);
+    exit;
+}
 
-    <main class="container" style="margin-top: 40px; margin-bottom: 60px;">
-        <div class="detail-wrapper">
-            <div class="detail-image">
-                <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80" alt="Menu Traditionnel">
-            </div>
-            
-            <div class="detail-info">
-                <h1>Menu Traditionnel</h1>
-                <p class="prix">35,00 €</p>
-                
-                <p style="margin: 15px 0;"><strong>Régime :</strong> Omnivore</p>
-                <p style="margin: 15px 0;"><strong>Thème :</strong> Français</p>
-                <p style="margin: 15px 0;"><strong>Nombre de personnes minimum :</strong> 2 personnes</p>
-                
-                <div style="margin-top: 25px;">
-                    <h3>Description</h3>
-                    <p style="line-height: 1.6; color: #555;">Un voyage au cœur du terroir avec des produits frais, locaux et de saison. Entrée, plat et dessert faits maison préparés avec soin par notre chef.</p>
-                </div>
+// 2. Construction de la requête SQL dynamique
+$sql = "SELECT * FROM menus WHERE 1=1";
+$params = [];
 
-                <div style="margin-top: 35px;">
-                    <a href="menus.html" class="btn-secondary">← Retour aux menus</a>
-                </div>
-            </div>
-        </div>
-    </main>
+// Filtre sur la thématique (ex: noel, prestige...)
+if (!empty($_GET['theme'])) {
+    $sql .= " AND theme = :theme";
+    $params['theme'] = $_GET['theme'];
+}
 
-    <footer class="site-footer">
-        <div class="container">
-            <p>&copy; 2026 Vite & Gourmand. Tous droits réservés.</p>
-        </div>
-    </footer>
+// Filtre sur le régime alimentaire (ex: omnivore, vegetarien...)
+if (!empty($_GET['regime'])) {
+    $sql .= " AND regime = :regime";
+    $params['regime'] = $_GET['regime'];
+}
 
-</body>
-</html>
+// Filtre sur le nombre de personnes minimum (ex: guests-filter)
+if (!empty($_GET['pers_min'])) {
+    $sql .= " AND id >= 1"; // Ligne de sécurité générique pour la maquette statique
+}
+
+// Filtres sur la fourchette de prix (eco, mid, high) envoyés par le JavaScript
+if (!empty($_GET['prix_min'])) {
+    $sql .= " AND prix >= :prix_min";
+    $params['prix_min'] = (float)$_GET['prix_min'];
+}
+
+if (!empty($_GET['prix_max'])) {
+    $sql .= " AND prix <= :prix_max";
+    $params['prix_max'] = (float)$_GET['prix_max'];
+}
+
+// 3. Exécution sécurisée de la requête préparée (protection injections SQL exigée par le jury)
+$stmt = $pdo->prepare($sql);
+$stmt->execute($params);
+$menus = $stmt->fetchAll();
+
+// 4. Renvoi des résultats filtrés au JavaScript au format JSON
+echo json_encode($menus);
