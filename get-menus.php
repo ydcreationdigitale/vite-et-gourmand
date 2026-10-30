@@ -1,7 +1,7 @@
 <?php
 header('Content-Type: application/json');
 
-// 1. Connexion sécurisée à ta base MySQL XAMPP via PDO
+// 1. Connexion sécurisée à votre base MySQL XAMPP via PDO
 try {
     $pdo = new PDO('mysql:host=localhost;dbname=vite_et_gourmand;charset=utf8', 'root', '', [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
@@ -28,7 +28,7 @@ if (!empty($_GET['regime'])) {
     $params['regime'] = $_GET['regime'];
 }
 
-// Filtre sur le nombre de personnes minimum (ex: guests-filter)
+// Filtre sur le nombre de personnes minimum (guests-filter)
 if (!empty($_GET['pers_min'])) {
     $sql .= " AND id >= 1"; // Ligne de sécurité générique pour la maquette statique
 }
@@ -44,7 +44,7 @@ if (!empty($_GET['prix_max'])) {
     $params['prix_max'] = (float)$_GET['prix_max'];
 }
 
-// 3. Exécution sécurisée de la requête préparée (protection injections SQL exigée par le jury)
+// 3. Exécution sécurisée de la requête préparée (protection contre les injections SQL)
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $menus = $stmt->fetchAll();
